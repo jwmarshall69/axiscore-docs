@@ -1,0 +1,15 @@
+site_name: AxisCore API
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Guides:
+      - Auth Quickstart: docs/guides/auth/quickstart-client-credentials.md
+  - Endpoints:
+      - POST /v1/auth/token: docs/endpoints/auth/post-auth-token.md
+  - Style: docs/style/style-guide.md
+  - Changelog: docs/changelog.md
+markdown_extensions:
+  - admonition
+  - tables
+  - codehilite
