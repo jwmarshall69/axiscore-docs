@@ -1,0 +1,26 @@
+name: API Docs & Tests
+on:
+  pull_request:
+    paths:
+      - "axiscore-docs/**"
+jobs:
+  lint-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install spectral
+        run: npm i -g @stoplight/spectral-cli
+      - name: Lint OpenAPI
+        run: spectral lint axiscore-docs/openapi.yaml
+
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm i -g newman
+      - name: Run Postman tests
+        run: |
+          newman run "axiscore-docs/postman/AxisCore Auth.postman_collection.json"             -e axiscore-docs/postman/env/Local.postman_environment.json             --env-var BASE_URL=${{ secrets.POSTMAN_BASE_URL }}             --env-var CLIENT_ID=${{ secrets.POSTMAN_CLIENT_ID }}             --env-var CLIENT_SECRET=${{ secrets.POSTMAN_CLIENT_SECRET }}
