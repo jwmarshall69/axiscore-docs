@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "AxisCore Auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /v1/auth/token",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const raw = `${pm.environment.get('CLIENT_ID')}:${pm.environment.get('CLIENT_SECRET')}`;",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Basic ' + btoa(raw) });"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or expected error', function() {",
+              "  pm.expect([200,401,429]).to.include(pm.response.code);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  const json = pm.response.json();",
+              "  pm.test('Has access_token', () => pm.expect(json.access_token).to.be.a('string'));",
+              "  pm.test('Token type Bearer', () => pm.expect(json.token_type).to.eql('Bearer'));",
+              "  pm.test('Has expires_in', () => pm.expect(json.expires_in).to.be.a('number'));",
+              "}",
+              "if (pm.response.code === 401) {",
+              "  const e = pm.response.json();",
+              "  pm.test('Error schema', () => pm.expect(e).to.have.property('code'));",
+              "}",
+              "if (pm.response.code === 429) {",
+              "  pm.test('Has Retry-After header', () => pm.expect(pm.response.headers.has('Retry-After')).to.be.true);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/v1/auth/token",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "token"
+          ]
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "key": "scope",
+              "value": "read:orders write:orders",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
