@@ -1,0 +1,26 @@
+✅ Today’s task list (Dev → Writer)
+
+Document POST /v1/auth/token (Client Credentials). Purpose, headers, form params, responses, rate limits, examples, and error schema.
+
+Add minimal OpenAPI 3.1 snippet for the token endpoint + shared Error schema + rate-limit headers.
+
+Create Postman artifacts: collection with success/401/429 tests; environment with BASE_URL, CLIENT_ID, CLIENT_SECRET.
+
+Write a quickstart: “Get a token and call a protected endpoint.”
+
+Add CI instructions: run Newman in PR and lint OpenAPI.
+
+🔑 Necessary inputs (use these as the source of truth)
+
+Endpoint: POST /v1/auth/token
+Auth to token endpoint: Authorization: Basic base64(<CLIENT_ID>:<CLIENT_SECRET>)
+Content-Type: application/x-www-form-urlencoded
+Body (form-encoded):
+
+grant_type (required, enum: client_credentials)
+
+scope (optional, space-delimited; ex: read:orders write:orders)
+
+Rate limit: 60 requests/min per IP + client.
+Rate-limit headers (all responses):
+X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset (unix seconds)
