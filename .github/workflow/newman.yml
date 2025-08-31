@@ -1,0 +1,22 @@
+name: Newman Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  newman:
+    name: Run Postman collection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Newman
+        run: npm i -g newman
+      - name: Run collection
+        run: |
+          newman run postman/collection.json             --env-var baseUrl=${{ secrets.POSTMAN_BASE_URL || 'https://api.example.com/v1' }}             --env-var token=${{ secrets.POSTMAN_TOKEN || '' }}             --env-var limit=5             --color on             --reporters cli
