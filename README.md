@@ -18,13 +18,16 @@ mkdocs serve
 
 ## Repo layout
 
-```
+```bash
 axiscore-docs/
   ├─ docs/
   │   ├─ endpoints/
   │   ├─ guides/
   │   └─ style/
   ├─ postman/
+  |   |- AxisCore Auth.postman_collection.json/
+  |   |- collection.json/
+  |   |_ environment.local.json/
   ├─ ci/
   ├─ assets/
   ├─ mkdocs.yml
@@ -32,5 +35,6 @@ axiscore-docs/
 ```
 
 ## CI overview
+
 - Lint OpenAPI
 - Run Postman collection via Newman on PRs
