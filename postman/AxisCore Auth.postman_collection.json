@@ -1,16 +1,40 @@
 {
-  "info": { "name": "AxisCore Auth", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "info": { "name": "AxisCore Orders", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('ACCESS_TOKEN')) {",
+          "  const id = pm.environment.get('CLIENT_ID');",
+          "  const secret = pm.environment.get('CLIENT_SECRET');",
+          "  const raw = `${id}:${secret}`;",
+          "  const hdr = (typeof btoa==='function') ? btoa(raw) : Buffer.from(raw).toString('base64');",
+          "  pm.sendRequest({",
+          "    url: pm.environment.get('BASE_URL') + '/v1/auth/token',",
+          "    method: 'POST',",
+          "    header: { 'Authorization': 'Basic ' + hdr, 'Content-Type': 'application/x-www-form-urlencoded' },",
+          "    body: { mode: 'urlencoded', urlencoded: [ { key: 'grant_type', value: 'client_credentials' } ] }",
+          "  }, (err, res) => { if (!err && res.code===200) pm.environment.set('ACCESS_TOKEN', res.json().access_token); });",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
-      "name": "POST /v1/auth/token",
+      "name": "GET Orders — Page 1",
       "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Basic {{CLIENT_ID}}:{{CLIENT_SECRET}}", "type": "text" },
-          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
-        ],
-        "url": { "raw": "{{BASE_URL}}/v1/auth/token", "host": ["{{BASE_URL}}"], "path": ["v1", "auth", "token"] },
-        "body": { "mode": "urlencoded", "urlencoded": [ { "key": "grant_type", "value": "client_credentials" }, { "key": "scope", "value": "read:orders write:orders", "disabled": true } ] }
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" } ],
+        "url": {
+          "raw": "{{BASE_URL}}/v1/orders?sort=-created_at&page[size]=5",
+          "host": ["{{BASE_URL}}"], "path": ["v1","orders"], "query": [
+            { "key": "sort", "value": "-created_at" },
+            { "key": "page[size]", "value": "5" }
+          ]
+        }
       },
       "event": [
         {
@@ -18,24 +42,109 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Status is 200 or expected error', function() {",
-              "  pm.expect([200,401,429]).to.include(pm.response.code);",
-              "});",
-              "if (pm.response.code === 200) {",
-              "  const json = pm.response.json();",
-              "  pm.test('Has access_token', () => pm.expect(json.access_token).to.be.a('string'));",
-              "  pm.test('Token type Bearer', () => pm.expect(json.token_type).to.eql('Bearer'));",
-              "  pm.test('Has expires_in', () => pm.expect(json.expires_in).to.be.a('number'));",
+              "pm.test('200 OK', ()=> pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('data[] exists', ()=> pm.expect(json.data).to.be.an('array'));",
+              "pm.variables.set('NEXT_CURSOR', json.meta && json.meta.next_cursor ? json.meta.next_cursor : '');",
+              "if (json.data && json.data.length) pm.environment.set('ORDER_ID', json.data[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET Orders — Auto paginate (3 hops)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" } ],
+        "url": { "raw": "{{BASE_URL}}/v1/orders?sort=-created_at&page[size]=5", "host": ["{{BASE_URL}}"], "path": ["v1","orders"], "query": [ { "key": "sort", "value": "-created_at" }, { "key": "page[size]", "value": "5" } ] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "let seen = new Set();",
+              "function page(url, n){",
+              "  pm.sendRequest({url, method:'GET', header:{'Authorization':'Bearer ' + pm.environment.get('ACCESS_TOKEN')}}, (err,res)=>{",
+              "    pm.test('page '+(4-n)+' status 200', ()=> pm.expect(res.code).to.eql(200));",
+              "    const j = res.json();",
+              "    (j.data||[]).forEach(o=> seen.add(o.id));",
+              "    if (n>1 && j.meta && j.meta.next_cursor){",
+              "      const next = pm.environment.get('BASE_URL') + '/v1/orders?page[after]=' + encodeURIComponent(j.meta.next_cursor);",
+              "      page(next, n-1);",
+              "    } else {",
+              "      pm.test('collected at least 1 item', ()=> pm.expect(seen.size).to.be.greaterThan(0));",
+              "    }",
+              "  });",
               "}",
-              "if (pm.response.code === 401) {",
-              "  const e = pm.response.json();",
-              "  pm.test('Error schema', () => pm.expect(e).to.have.keys(['code','message']));",
-              "}",
-              "if (pm.response.code === 429) {",
-              "  pm.test('Has Retry-After header', () => pm.expect(pm.response.headers.has('Retry-After')).to.be.true);",
+              "page(pm.environment.get('BASE_URL') + '/v1/orders?sort=-created_at&page[size]=5', 3);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET Order by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" } ],
+        "url": { "raw": "{{BASE_URL}}/v1/orders/{{ORDER_ID}}", "host": ["{{BASE_URL}}"], "path": ["v1","orders","{{ORDER_ID}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 or 404', ()=> pm.expect([200,404]).to.include(pm.response.code));",
+              "if (pm.response.code===200){",
+              "  const o = pm.response.json();",
+              "  pm.test('has id/status/total', ()=> {",
+              "    pm.expect(o).to.have.property('id');",
+              "    pm.expect(o).to.have.property('status');",
+              "    pm.expect(o).to.have.property('total');",
+              "  });",
               "}"
             ]
           }
+        }
+      ]
+    },
+    {
+      "name": "NEGATIVE — page[size]=500 (400)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" } ],
+        "url": { "raw": "{{BASE_URL}}/v1/orders?page[size]=500", "host": ["{{BASE_URL}}"], "path": ["v1","orders"], "query": [ { "key": "page[size]", "value": "500" } ] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type":"text/javascript", "exec": [
+            "pm.test('400 Bad Request', ()=> pm.response.to.have.status(400));",
+            "const e = pm.response.json(); pm.test('error shape', ()=> pm.expect(e).to.have.property('code'));"
+          ] }
+        }
+      ]
+    },
+    {
+      "name": "NEGATIVE — invalid date range (422)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" } ],
+        "url": { "raw": "{{BASE_URL}}/v1/orders?created_at[gte]=2025-09-10T00:00:00Z&created_at[lte]=2025-09-01T00:00:00Z", "host": ["{{BASE_URL}}"], "path": ["v1","orders"], "query": [
+          { "key": "created_at[gte]", "value": "2025-09-10T00:00:00Z" },
+          { "key": "created_at[lte]", "value": "2025-09-01T00:00:00Z" }
+        ] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type":"text/javascript", "exec": [
+            "pm.test('422 Unprocessable', ()=> pm.response.to.have.status(422));"
+          ] }
         }
       ]
     }
