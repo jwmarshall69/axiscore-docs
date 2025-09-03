@@ -25,9 +25,9 @@ axiscore-docs/
   │   ├─ guides/
   │   └─ style/
   ├─ postman/
-  |   |- AxisCore Auth.postman_collection.json/
-  |   |- collection.json/
-  |   |_ environment.local.json/
+  |   ├─ AxisCore Auth.postman_collection.json/
+  |   ├─ collection.json/
+  |   └─ style/ environment.local.json/
   ├─ ci/
   ├─ assets/
   ├─ mkdocs.yml
