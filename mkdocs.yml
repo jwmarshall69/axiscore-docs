@@ -5,11 +5,17 @@ nav:
   - Home: index.md
   - Guides:
       - Auth Quickstart: docs/guides/auth/quickstart-client-credentials.md
+      - List & Filter Orders: docs/guides/orders/list-and-filter-orders.md
+      - Retries & Backoff: docs/guides/errors/retries-and-backoff.md
   - Endpoints:
       - POST /v1/auth/token: docs/endpoints/auth/post-auth-token.md
+      - GET /v1/orders: docs/endpoints/orders/get-orders.md
+      - GET /v1/orders/{id}: docs/endpoints/orders/get-order-by-id.md
+  - Reference:
+      - Error Catalog: docs/reference/error-catalog.md
   - Style: docs/style/style-guide.md
   - Changelog: docs/changelog.md
 markdown_extensions:
   - admonition
   - tables
-  - code high lights
+  - code highlights
