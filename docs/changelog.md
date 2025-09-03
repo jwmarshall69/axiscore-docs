@@ -1,5 +1,6 @@
-
 ## 2025-09-02
-- Added `GET /v1/orders` (cursor pagination, filters, sorting) and `GET /v1/orders/{id}`.
-- Introduced shared pagination/filter parameters and `Order` schema.
-- New Postman collection with auto-pagination tests.
+
+- Introduced canoncial error model with `retryable`, `type`, and `docs_url`.
+- Added error catalog and retry/backoff guide (exponential w/ jitter).
+- Wired error examples into `auth` and `orders` operation.
+- New Postman Error collection for 400/401/404/422 assertions. 
