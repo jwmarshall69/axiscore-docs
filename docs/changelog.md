@@ -1,4 +1,5 @@
-# 2025-08-30
 
-- Initialized AxisCore docs starter kit.
-- Added `POST /v1/auth/token` (client_credentials) and rate limit headers documentation..
+## 2025-09-02
+- Added `GET /v1/orders` (cursor pagination, filters, sorting) and `GET /v1/orders/{id}`.
+- Introduced shared pagination/filter parameters and `Order` schema.
+- New Postman collection with auto-pagination tests.
